@@ -38,7 +38,11 @@ def log_request_info():
 
 # Initialize OpenAI client
 # Note: Using compatible versions of openai and httpx to avoid 'proxies' argument error
-openai_api_key = os.environ.get('OPENAI_API_KEY', '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')
+openai_api_key = os.environ.get('OPENAI_API_KEY')
+
+# Validate API key is present
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY environment variable is required but not set")
 
 # Global OpenAI client for report validation
 global client
