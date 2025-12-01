@@ -31,6 +31,17 @@ def log_request_info():
         except:
             pass
     print(f"{'='*60}\n")
+# Add CORS headers to all responses
+@app.after_request
+def add_cors_headers(response):
+    print(f"📤 OUTGOING RESPONSE: {response.status_code} for {request.method} {request.path}")
+    origin = request.headers.get('Origin', '*')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
+    print(f"✅ Added CORS headers for origin: {origin}")
+    return response
 
 # Initialize OpenAI client
 # Note: Using compatible versions of openai and httpx to avoid 'proxies' argument error
