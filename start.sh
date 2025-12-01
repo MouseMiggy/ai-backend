@@ -1,2 +1,1 @@
-python3 app.py &
-python3 ai_suggestion.py
+gunicorn app:app --bind 0.0.0.0:$PORT
