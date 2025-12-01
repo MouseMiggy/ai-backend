@@ -11,7 +11,7 @@ from ai_suggestion import ai_suggestions_bp, init_openai
 
 app = Flask(__name__)
 # Allow all origins for local development (mobile devices need this)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Flask-CORS removed - using manual CORS headers instead to avoid conflicts
 
 # Log all incoming requests for debugging
 @app.before_request
@@ -25,22 +25,35 @@ def log_request_info():
         print(f"📦 Content-Type: {request.headers.get('Content-Type', 'None')}")
         try:
             data = request.get_json(silent=True) or {}
-            print(f"📋 Has JSON data: {bool(data)}")
+            print(f" Has JSON data: {bool(data)}")
             if data:
                 print(f" Keys: {list(data.keys())[:5]}")
         except:
             pass
     print(f"{'='*60}\n")
+
 # Add CORS headers to all responses - Final deployment fix for 405 errors
 @app.after_request
 def add_cors_headers(response):
-    print(f"📤 OUTGOING RESPONSE: {response.status_code} for {request.method} {request.path}")
+    print(f" OUTGOING RESPONSE: {response.status_code} for {request.method} {request.path}")
     origin = request.headers.get('Origin', '*')
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
     response.headers['Access-Control-Max-Age'] = '86400'  # 24 hours
-    print(f"✅ Added CORS headers for origin: {origin}")
+    print(f" Added CORS headers for origin: {origin}")
+    return response
+
+# Handle OPTIONS requests explicitly for all routes
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    print(f" Handling OPTIONS request for: /{path}")
+    response = make_response('', 200)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Max-Age'] = '86400'
     return response
 
 # Initialize OpenAI client
