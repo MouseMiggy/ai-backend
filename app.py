@@ -82,9 +82,19 @@ def download_image_to_base64(image_url):
 
 @app.route('/validate-report', methods=['POST', 'OPTIONS'])
 def validate_report():
-    # Handle CORS preflight - CORS() already handles headers, just return 200
+    """Validate user reports for inappropriate content using AI"""
+    print(f"📥 REQUEST: {request.method} /validate-report")
+    print(f"🌐 Origin: {request.headers.get('Origin', 'None')}")
+    print(f"🔧 Content-Type: {request.headers.get('Content-Type', 'None')}")
+    
+    # Handle CORS preflight requests
     if request.method == 'OPTIONS':
-        return '', 200
+        print("✅ Handling OPTIONS preflight request")
+        response = make_response('', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
     
     start_time = time.time()
     
@@ -760,9 +770,18 @@ IMPORTANT: The reason field must be comprehensive and detailed (at least 3-4 sen
 @app.route('/validate-listing-image', methods=['POST', 'OPTIONS'])
 def validate_listing_image():
     """Validate livestock listing images to verify if they contain livestock waste or processed fertilizer"""
-    # Handle CORS preflight - CORS() already handles headers, just return 200
+    print(f"📥 REQUEST: {request.method} /validate-listing-image")
+    print(f"🌐 Origin: {request.headers.get('Origin', 'None')}")
+    print(f"🔧 Content-Type: {request.headers.get('Content-Type', 'None')}")
+    
+    # Handle CORS preflight requests
     if request.method == 'OPTIONS':
-        return '', 200
+        print("✅ Handling OPTIONS preflight request")
+        response = make_response('', 200)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
     
     start_time = time.time()
     
