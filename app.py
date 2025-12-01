@@ -31,7 +31,7 @@ def log_request_info():
         except:
             pass
     print(f"{'='*60}\n")
-# Add CORS headers to all responses
+# Add CORS headers to all responses - Final deployment fix for 405 errors
 @app.after_request
 def add_cors_headers(response):
     print(f"📤 OUTGOING RESPONSE: {response.status_code} for {request.method} {request.path}")
