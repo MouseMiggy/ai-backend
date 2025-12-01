@@ -87,15 +87,6 @@ def validate_report():
     print(f"🌐 Origin: {request.headers.get('Origin', 'None')}")
     print(f"🔧 Content-Type: {request.headers.get('Content-Type', 'None')}")
     
-    # Handle CORS preflight requests
-    if request.method == 'OPTIONS':
-        print("✅ Handling OPTIONS preflight request")
-        response = make_response('', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response
-    
     start_time = time.time()
     
     try:
@@ -773,15 +764,6 @@ def validate_listing_image():
     print(f"📥 REQUEST: {request.method} /validate-listing-image")
     print(f"🌐 Origin: {request.headers.get('Origin', 'None')}")
     print(f"🔧 Content-Type: {request.headers.get('Content-Type', 'None')}")
-    
-    # Handle CORS preflight requests
-    if request.method == 'OPTIONS':
-        print("✅ Handling OPTIONS preflight request")
-        response = make_response('', 200)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response
     
     start_time = time.time()
     
