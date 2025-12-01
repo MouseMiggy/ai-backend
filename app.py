@@ -12,6 +12,7 @@ from ai_suggestion import ai_suggestions_bp, init_openai
 app = Flask(__name__)
 # Allow all origins for local development (mobile devices need this)
 # Flask-CORS removed - using manual CORS headers instead to avoid conflicts
+# Final deployment for localhost:3000 CORS support
 
 # Log all incoming requests for debugging
 @app.before_request
