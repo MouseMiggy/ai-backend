@@ -38,7 +38,7 @@ def log_request_info():
 
 # Initialize OpenAI client
 # Note: Using compatible versions of openai and httpx to avoid 'proxies' argument error
-openai_api_key = os.environ.get('OPENAI_API_KEY', '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')
+openai_api_key = os.environ.get('OPENAI_API_KEY', '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')
 
 # Global OpenAI client for report validation
 global client
