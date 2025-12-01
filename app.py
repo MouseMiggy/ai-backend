@@ -940,21 +940,6 @@ IMPORTANT: The reason field must be comprehensive and detailed, explaining ALL v
         }), 500
 
 
-@app.route('/routes', methods=['GET'])
-def list_routes():
-    """Debug route to list all registered endpoints"""
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append({
-            'endpoint': rule.endpoint,
-            'methods': list(rule.methods),
-            'path': str(rule)
-        })
-    return jsonify({
-        'routes': sorted(routes, key=lambda x: x['path']),
-        'total': len(routes)
-    })
-
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()}), 200
