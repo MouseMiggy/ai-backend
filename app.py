@@ -546,14 +546,10 @@ IMPORTANT: The reason field must be comprehensive and detailed (at least 3-4 sen
                 'overall verdict is invalid' in reason_text
             )
             
-            # If reason clearly indicates VALID but verdict is INVALID, correct it
-            if reason_indicates_valid and current_verdict == 'INVALID':
-                print("⚠️ WARNING: Reason indicates VALID but verdict is INVALID. Correcting verdict to VALID.")
-                validation_result['verdict'] = 'VALID'
-            # If reason clearly indicates INVALID but verdict is VALID, correct it
-            elif reason_indicates_invalid and current_verdict == 'VALID':
-                print("⚠️ WARNING: Reason indicates INVALID but verdict is VALID. Correcting verdict to INVALID.")
-                validation_result['verdict'] = 'INVALID'
+            # CRITICAL: For listing reports, DO NOT override the AI verdict based on reason text
+            # The AI prompt is specifically designed to handle listing report logic correctly
+            # Only apply correction for general reports, not listing reports
+            print("🔒 Listing report detected - preserving original AI verdict without correction")
             
             # Ensure reason is clean
             if validation_result.get('reason'):
