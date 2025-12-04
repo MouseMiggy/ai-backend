@@ -475,7 +475,7 @@ Return JSON:
   "verdict": "VALID" or "INVALID",
   "confidence": 0.0-1.0,
   "reason": "{reason_instruction}",
-  "category": "spam|offensive|misinformation|irrelevant|false_report",
+  "category": "Livestock Waste" or "Not Livestock Waste",
   "severity": "low|medium|high",
   "action_recommended": "none|warning|content_removal|user_suspension"
 }}
