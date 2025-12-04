@@ -438,25 +438,35 @@ Format: "Listing Name/Details Analysis: [detailed analysis of name and details, 
 3. Violation assessment: If verdict is VALID (violation found), list ALL specific violations found (exact offensive words, why name/details are not agriculture-related, etc.). If verdict is INVALID (no violation), explain why the listing is legitimate and agriculture-related with specific examples.
 4. Overall conclusion: A clear summary explaining ALL the reasons why the verdict is VALID (violation found) or INVALID (no violation, legitimate content) based on the comprehensive analysis."""
         
-        prompt = f"""You are AgriLink's content moderator for listings.
+        prompt = f"""You are AgriLink's content moderator for listing reports.
 
-CRITICAL: VALID = violation found (content should be removed). INVALID = no violation (legitimate content).
+CRITICAL: VALID = violation found (listing should be removed). INVALID = no violation (legitimate listing content, report is unnecessary).
 
 RULES (apply in order):
 1. Check for bad words FIRST (buang, bogo, yawa, gago, putang ina, bobo, tanga, ulol, puta, gagu, profanity):
    - If bad word found → VERDICT MUST BE "VALID" (violation found)
 
-2. If no bad words, check if listing name/details are about agriculture:
-   - Name/details about farming/livestock/crops/agriculture → Continue to image check
-   - Name/details NOT about agriculture → VERDICT MUST BE "VALID" (violation: irrelevant content)
+2. If no bad words, check if listing name/details are about legitimate livestock waste or processed livestock materials ONLY:
+   - Name/details about livestock waste (cow manure, pig manure, chicken manure, animal droppings, composted waste, organic fertilizer, etc.) → Continue to image check
+   - Name/details about processed livestock materials (wool, fleece, sheep products, animal fibers, processed animal materials, egg shells, bone meal, blood meal, etc.) → Continue to image check
+   - Name/details about ANYTHING ELSE (crops, vegetables, fruits, farming equipment, tools, seeds, plants, general agriculture, etc.) → VERDICT MUST BE "VALID" (violation: not livestock waste/processed material)
 
 3. If images present:
-   - If ANY single image is NOT agriculture-related → VERDICT MUST BE "VALID" (violation: non-agricultural image)
-   - If ALL images are agriculture-related AND name/details are agriculture-related → VERDICT MUST BE "INVALID" (no violation)
+   - If ANY single image shows NON-livestock-waste content → VERDICT MUST BE "VALID" (violation: not livestock waste/processed material)
+   - If ALL images show legitimate livestock waste OR processed livestock materials → VERDICT MUST BE "INVALID" (no violation, report is unnecessary)
 
-CRITICAL LOGIC: 
-- If you find ANY violation (bad words, non-agricultural name/details, or non-agricultural image), the verdict MUST be "VALID"
-- Only mark as "INVALID" if ALL content (name + details + all images) is legitimate agriculture-related content with no violations
+CRITICAL LOGIC FOR REPORTS:
+- This is AgriLink - a platform EXCLUSIVELY for livestock waste and processed livestock materials
+- ONLY livestock waste and processed livestock materials are legitimate content
+- If the listing contains legitimate livestock waste or processed livestock materials → The REPORT is "INVALID" (unnecessary)
+- If the listing contains ANYTHING ELSE (crops, vegetables, fruits, farming equipment, general agriculture, etc.) → The REPORT is "VALID" (justified)
+- Examples:
+  * "Chicken Manure with Egg Shells" with manure/egg shells image → Report "INVALID" (legitimate livestock waste)
+  * "Cow Manure" with manure image → Report "INVALID" (legitimate livestock waste)
+  * "Wool Fleece" with wool image → Report "INVALID" (legitimate processed material)
+  * "Tomatoes for Sale" with tomato image → Report "VALID" (not livestock waste)
+  * "Farming Equipment" with tools image → Report "VALID" (not livestock waste)
+  * "Vegetable Seeds" with seeds image → Report "VALID" (not livestock waste)
 
 {image_analysis_instructions}
 
