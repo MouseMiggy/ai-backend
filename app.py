@@ -671,7 +671,7 @@ IMPORTANT: The reason field must be comprehensive and detailed (at least 3-4 sen
 
 @app.route('/validate-message-report', methods=['POST', 'OPTIONS'])
 def validate_message_report():
-    """Validate message reports - focuses on offensive content, not agricultural relevance"""
+    """Validate message reports - analyzes text (Tagalog/Cebuano/English) and images for offensive content"""
     # Handle CORS preflight
     if request.method == 'OPTIONS':
         response = jsonify({"status": "ok"})
@@ -689,46 +689,184 @@ def validate_message_report():
         
         # Extract data
         message_text = data.get('caption', '') or data.get('messageText', '') or data.get('text', '')
-        report_type = data.get('reportType', 'spam')
-        additional_note = data.get('additionalNote', '') or data.get('additional_note', '')
+        image_urls = data.get('imageUrls', []) or []
+        media_type = data.get('mediaType', 'text')
+        report_type = data.get('reportType', 'offensive')
         
         print(f"Message Text: {message_text[:100] if message_text else 'Empty'}")
+        print(f"Image URLs: {len(image_urls)} image(s)")
+        print(f"Media Type: {media_type}")
         print(f"Report Type: {report_type}")
         
-        if not message_text or message_text.strip() == '':
+        # Process imageUrls array - get all valid image URLs
+        all_image_urls = []
+        print(f"🔍 RAW imageUrls received: {image_urls}")
+        print(f"🔍 imageUrls type: {type(image_urls)}")
+        print(f"🔍 imageUrls is list: {isinstance(image_urls, list)}")
+        
+        if isinstance(image_urls, list) and len(image_urls) > 0:
+            print(f"🔍 Processing {len(image_urls)} items in imageUrls array")
+            for idx, img in enumerate(image_urls):
+                print(f"  🔍 Item {idx}: type={type(img)}, value={str(img)[:100]}")
+                if isinstance(img, str) and img.strip():
+                    all_image_urls.append(img.strip())
+                    print(f"  ✅ Added string URL: {img.strip()[:80]}")
+                elif isinstance(img, dict) and img.get('url') and img['url'].strip():
+                    all_image_urls.append(img['url'].strip())
+                    print(f"  ✅ Added dict URL: {img['url'].strip()[:80]}")
+                else:
+                    print(f"  ⚠️ Skipped invalid item: {img}")
+        else:
+            print(f"⚠️ imageUrls is not a valid list or is empty")
+        
+        print(f"📸 Total valid image URLs to analyze: {len(all_image_urls)}")
+        if len(all_image_urls) > 0:
+            print(f"📸 Image URLs:")
+            for idx, url in enumerate(all_image_urls):
+                print(f"  {idx + 1}. {url[:100]}")
+        
+        # Validate that we have content to analyze
+        if (not message_text or message_text.strip() == '') and len(all_image_urls) == 0:
             return jsonify({
                 "status": "error",
-                "error": "Message text is required for validation"
+                "error": "Either message text or images are required for validation"
             }), 400
         
-        # Prepare content for OpenAI
-        user_content = [{"type": "text", "text": f"""Message: "{message_text}"
-
-Check for bad words: buang, bogo, yawa, gago, putang ina, bobo, tanga, ulol, puta, gagu, profanity, swear words.
-
-If bad word found → VALID (reason: "Contains offensive language: '[word]'")
-If no bad words → INVALID (reason: "No violations found")
-"""}]
+        # Prepare content for OpenAI with both text and images
+        user_content = []
         
-        print(f"DEBUG: User content text being sent to AI: {user_content[0]['text'][:300]}")
+        # Add text analysis instruction
+        text_instruction = f"""Analyze this chat message for offensive content.
+
+MESSAGE TEXT: "{message_text}"
+
+OFFENSIVE WORDS TO CHECK (Tagalog/Cebuano/English):
+- Tagalog: gago, putang ina, bobo, tanga, ulol, puta, tangina, hayop, peste, leche
+- Cebuano/Bisaya: buang, bogo, yawa, gagu, atay, piste, yati
+- English: fuck, shit, bitch, asshole, bastard, damn, hell, idiot, stupid, moron, cunt, dick, pussy
+
+Check for:
+1. Offensive language (profanity, insults, slurs)
+2. Harassment or bullying
+3. Threats or intimidation
+4. Hate speech or discrimination
+5. Sexual harassment
+
+"""
         
-        prompt = """You are AgriLink's content moderator for messages.
+        # Add image analysis instruction if images exist
+        if len(all_image_urls) > 0:
+            text_instruction += f"""
+IMAGES TO ANALYZE: {len(all_image_urls)} image(s)
 
-Check for bad words (English/Tagalog/Bisaya): buang, bogo, yawa, gago, putang ina, bobo, tanga, ulol, puta, gagu, profanity, swear words.
+For each image, check for:
+1. Weapons (guns, knives, firearms, explosives)
+2. Violence or gore (blood, injuries, fighting)
+3. Nudity or sexual content (exposed body parts, sexual acts)
+4. Hate symbols (racist imagery, discriminatory symbols)
+5. Inappropriate content (drugs, illegal activities)
+6. Threatening imagery (aggressive gestures, intimidation)
 
-If bad word found → VALID. If clean → INVALID.
+IMPORTANT: You MUST analyze ALL images provided. Do not skip image analysis.
+"""
+        else:
+            text_instruction += "\nNO IMAGES: No images were provided in this report.\n"
+        
+        user_content.append({"type": "text", "text": text_instruction})
+        
+        # Download and add all images to the request
+        images_processed = 0
+        if len(all_image_urls) > 0:
+            print(f"\n{'='*60}")
+            print(f"📸 STARTING IMAGE PROCESSING: {len(all_image_urls)} image(s)")
+            print(f"{'='*60}")
+            for index, img_url in enumerate(all_image_urls):
+                try:
+                    print(f"\n🔄 Processing image {index + 1}/{len(all_image_urls)}")
+                    print(f"   URL: {img_url[:100]}...")
+                    
+                    # Download image and convert to base64
+                    print(f"   ⬇️ Downloading image...")
+                    base64_image_url = download_image_to_base64(img_url)
+                    print(f"   ✅ Download complete, base64 length: {len(base64_image_url)}")
+                    
+                    # Add to user content
+                    image_content = {
+                        "type": "image_url",
+                        "image_url": {"url": base64_image_url}
+                    }
+                    user_content.append(image_content)
+                    images_processed += 1
+                    print(f"   ✅ Image {index + 1} added to OpenAI request (total content items: {len(user_content)})")
+                except Exception as img_error:
+                    print(f"   ❌ ERROR processing image {index + 1}: {img_error}")
+                    print(f"   URL was: {img_url[:100]}")
+                    import traceback
+                    print(f"   Traceback: {traceback.format_exc()}")
+                    # Continue with other images even if one fails
+            print(f"\n{'='*60}")
+            print(f"� IMAGE PROCESSING COMPLETE")
+            print(f"   Total images processed: {images_processed}/{len(all_image_urls)}")
+            print(f"   Total content items for OpenAI: {len(user_content)}")
+            print(f"{'='*60}\n")
+        else:
+            print(f"\n⚠️ NO IMAGES TO PROCESS - imageUrls array is empty\n")
+        
+        print(f"📤 FINAL CHECK - Sending to OpenAI:")
+        print(f"   Content items: {len(user_content)}")
+        print(f"   Images: {images_processed}")
+        print(f"   Text instruction: {'Yes' if len(user_content) > 0 and user_content[0]['type'] == 'text' else 'No'}")
+        for idx, item in enumerate(user_content):
+            print(f"   Item {idx}: type={item['type']}, has_content={'Yes' if item.get('text') or item.get('image_url') else 'No'}")
+        
+        prompt = """You are AgriLink's content moderator for chat messages. Analyze messages for offensive content in Tagalog, Cebuano, and English.
 
-Return JSON:
+VERDICT RULES:
+- VALID = Violation found (offensive language, inappropriate images, harassment, threats, hate speech, weapons, nudity, violence)
+- INVALID = No violation (clean content, appropriate communication)
+
+⚠️ CRITICAL WEAPON DETECTION RULES - ZERO TOLERANCE:
+1. ANY firearm, gun, pistol, rifle, shotgun, revolver → MUST return VALID verdict
+2. ANY weapon (knife, blade, sword, explosive, ammunition) → MUST return VALID verdict
+3. Even if weapon is in background, toy-like, or unclear → MUST return VALID verdict
+4. Weapons are STRICTLY PROHIBITED - no exceptions for context or intent
+5. If you see ANYTHING that resembles a weapon → verdict MUST be VALID
+
+RESPONSE FORMAT - Return JSON with TWO SEPARATE SECTIONS:
 {
   "verdict": "VALID" or "INVALID",
   "confidence": 0.0-1.0,
-  "reason": "Provide a comprehensive, detailed explanation (at least 3-4 sentences) covering: 1. Language analysis: Analyze the message text word-by-word, checking for offensive language in English, Tagalog, and Bisaya. If offensive words are found, specify exactly which words were detected and explain why they are considered offensive (e.g., 'buang' is a Bisaya profanity meaning 'crazy' or 'insane', 'bobo' is a Tagalog insult meaning 'stupid'). 2. Context assessment: Evaluate the context in which the language is used - whether it's used in a harassing, bullying, threatening, or hateful manner, or if it's acceptable usage. 3. Violation details: If VALID, list all specific violations found (exact offensive words, type of harassment, threats, etc.). If INVALID, explain why the message is acceptable and does not violate community standards. 4. Overall conclusion: Provide a clear summary explaining all reasons for the verdict based on the comprehensive analysis.",
-  "category": "harassment|offensive|false_report",
+  "reason": "Text content analysis: [Analyze the message text for offensive language in Tagalog, Cebuano, and English. List specific offensive words found and explain why they violate guidelines. If no offensive text, state that the text is appropriate.]\n\nImage Analysis: [Analyze ALL images provided. For each image, describe EXACTLY what you see. Check for weapons (guns, firearms, knives), violence, nudity, hate symbols, or inappropriate content. If violations found, specify EXACTLY what was detected (e.g., 'Image contains a handgun/pistol/firearm'). If images are clean, state that they are appropriate. If NO images provided, state 'No images to analyze.']",
+  "category": "offensive_language|harassment|racism|inappropriate_image|weapons_violence|hate_symbols|sexual_content|clean",
   "severity": "low|medium|high",
   "action_recommended": "none|warning|content_removal|user_suspension"
 }
 
-IMPORTANT: The reason field must be comprehensive and detailed (at least 3-4 sentences), explaining ALL factors that led to the verdict. Do not use brief or one-sentence reasons. Always provide detailed explanations covering language analysis, context assessment, and overall conclusion.
+CRITICAL REQUIREMENTS:
+1. The "reason" field MUST have TWO separate paragraphs:
+   - First paragraph: "Text content analysis: [detailed text analysis]"
+   - Second paragraph: "Image Analysis: [detailed image analysis for ALL images OR 'No images to analyze']"
+2. You MUST analyze ALL images provided - do not skip any
+3. Be EXTREMELY specific about violations found (exact words, exact objects in images)
+4. If gun/weapon/firearm in image → MUST return VALID with category "weapons_violence"
+5. If nudity/sexual content in image → MUST return VALID with category "sexual_content"
+6. If offensive words in text → MUST return VALID with category "offensive_language"
+7. Provide detailed explanations (3-4 sentences minimum per section)
+8. DESCRIBE what you see in images - don't just say "appropriate" or "clean"
+
+WEAPONS TO DETECT (ZERO TOLERANCE):
+- Firearms: guns, pistols, rifles, shotguns, revolvers, handguns, assault rifles
+- Bladed weapons: knives, swords, machetes, daggers, blades
+- Explosives: grenades, bombs, ammunition, bullets
+- Other weapons: clubs, bats, brass knuckles, tasers, pepper spray
+- ANY object that could be used as a weapon in a threatening manner
+
+TAGALOG/CEBUANO OFFENSIVE WORDS:
+- gago, putang ina, bobo, tanga, ulol, puta, tangina (Tagalog insults)
+- buang, bogo, yawa, gagu (Cebuano/Bisaya insults)
+- These are serious profanity and should result in VALID verdict
+
+REMEMBER: If you detect ANY weapon in ANY image, you MUST return verdict "VALID" with category "weapons_violence". No exceptions.
 """
         
         try:
@@ -738,13 +876,15 @@ IMPORTANT: The reason field must be comprehensive and detailed (at least 3-4 sen
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": user_content}
                 ],
-                max_tokens=800,  # Increased for comprehensive, detailed explanations
+                max_tokens=1000,
                 temperature=0.1,
                 response_format={"type": "json_object"}
             )
             
             ai_response = response.choices[0].message.content
             validation_result = json.loads(ai_response)
+            
+            print(f"🤖 AI Response: {json.dumps(validation_result, indent=2)}")
             
             if not validation_result.get('verdict'):
                 raise Exception("OpenAI response missing verdict field")
@@ -759,7 +899,8 @@ IMPORTANT: The reason field must be comprehensive and detailed (at least 3-4 sen
                 "status": "success",
                 "result": validation_result,
                 "processing_time": f"{time.time() - start_time:.2f}s",
-                "content_type": "message"
+                "content_type": "message",
+                "images_analyzed": images_processed
             }), 200
         except Exception as openai_error:
             print(f"OpenAI API Error: {openai_error}")
