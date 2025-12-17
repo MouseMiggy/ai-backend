@@ -1100,6 +1100,149 @@ IMPORTANT: The reason field must be comprehensive and detailed, explaining ALL v
         }), 500
 
 
+@app.route('/validate-listing-text', methods=['POST', 'OPTIONS'])
+def validate_listing_text():
+    """Validate livestock listing title and description to ensure they are aligned"""
+    print(f"📥 REQUEST: {request.method} /validate-listing-text")
+    print(f"🌐 Origin: {request.headers.get('Origin', 'None')}")
+    print(f"🔧 Content-Type: {request.headers.get('Content-Type', 'None')}")
+    
+    # Handle OPTIONS preflight request
+    if request.method == 'OPTIONS':
+        return '', 200
+    
+    start_time = time.time()
+    
+    try:
+        data = request.get_json()
+        print("INCOMING LISTING TEXT VALIDATION REQUEST")
+        print(f"Request data: {json.dumps(data, indent=2)}")
+        
+        # Extract data
+        listing_name = data.get('listingName', '') or data.get('name', '')
+        listing_details = data.get('listingDetails', '') or data.get('details', '')
+        
+        print(f"Listing Name: {listing_name[:100] if listing_name else 'Empty'}")
+        print(f"Listing Details: {listing_details[:100] if listing_details else 'Empty'}")
+        
+        if not listing_name or not listing_details:
+            return jsonify({
+                "status": "error",
+                "error": "Both listing name and details are required for validation"
+            }), 400
+        
+        prompt = f"""You are AgriLink's listing text verification expert. Analyze the listing title and description to ensure they are properly aligned.
+
+CRITICAL: 
+- VERIFIED_ALIGNED = Title and description match and provide consistent information
+- NOT_ALIGNED = Title and description don't match or provide conflicting information
+
+VERIFICATION RULES:
+1. VERIFIED_ALIGNED if:
+   - The description provides details that support and expand on what's mentioned in the title
+   - Both title and description refer to the same type of livestock waste
+   - The information is consistent and coherent
+   - The description accurately describes the waste type mentioned in the title
+
+2. NOT_ALIGNED if:
+   - Title mentions one waste type but description describes another
+   - Description contradicts or doesn't support the title
+   - Information is inconsistent or confusing
+   - Description is too generic or unrelated to the specific waste type
+
+ANALYSIS FORMAT:
+Provide detailed analysis covering:
+1. What waste type is mentioned in the title
+2. What the description actually describes
+3. Whether they match or conflict
+4. Specific reasons for the verdict
+
+Return JSON:
+{{
+  "verdict": "VERIFIED_ALIGNED" or "NOT_ALIGNED",
+  "confidence": 0.0-1.0,
+  "reason": "Provide comprehensive explanation covering: 1. The waste type mentioned in the title, 2. What the description describes, 3. Whether they align or conflict, 4. Specific reasons for the verdict. Be thorough in your analysis.",
+  "isAligned": true/false,
+  "processingTime": "{time.time() - start_time:.2f}s"
+}}
+
+IMPORTANT: The reason field must be comprehensive and detailed, explaining ALL factors that led to the verdict."""
+        
+        # Call OpenAI
+        print(" Calling OpenAI API for listing text validation...")
+        
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Listing Name: "{listing_name}"
+Listing Details: "{listing_details}"
+
+Please analyze if the title and description are properly aligned."""
+                    }
+                ],
+                max_tokens=1000,
+                temperature=0.3
+            )
+            
+            result = response.choices[0].message.content
+            print(f" OpenAI Response: {result[:200]}...")
+            
+            # Parse the JSON response
+            try:
+                ai_result = json.loads(result)
+                ai_result['processingTime'] = f"{time.time() - start_time:.2f}s"
+                print(f"✅ Text validation completed in {ai_result['processingTime']}")
+                
+                return jsonify({
+                    "status": "success",
+                    "result": ai_result
+                }), 200
+                
+            except json.JSONDecodeError:
+                print(f"⚠️ Failed to parse JSON from AI response")
+                # Try to extract verdict from text response
+                if "VERIFIED_ALIGNED" in result:
+                    verdict = "VERIFIED_ALIGNED"
+                    is_aligned = True
+                elif "NOT_ALIGNED" in result:
+                    verdict = "NOT_ALIGNED"
+                    is_aligned = False
+                else:
+                    verdict = "UNABLE_TO_VERIFY"
+                    is_aligned = False
+                
+                fallback_result = {
+                    "verdict": verdict,
+                    "confidence": 0.5,
+                    "reason": result,
+                    "isAligned": is_aligned,
+                    "processingTime": f"{time.time() - start_time:.2f}s"
+                }
+                
+                return jsonify({
+                    "status": "success",
+                    "result": fallback_result
+                }), 200
+                
+        except Exception as openai_error:
+            print(f" OpenAI API Error: {openai_error}")
+            raise
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({
+            "status": "error",
+            "error": str(e)
+        }), 500
+
+
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()}), 200
@@ -1114,6 +1257,7 @@ def index():
             "/validate-report",
             "/validate-listing-report", 
             "/validate-listing-image",
+            "/validate-listing-text",
             "/validate-comment-report",
             "/validate-message-report",
             "/generate-chat-suggestions",
