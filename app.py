@@ -1131,45 +1131,42 @@ def validate_listing_text():
                 "error": "Both listing name and details are required for validation"
             }), 400
         
-        prompt = f"""You are AgriLink's listing text verification expert. Analyze the listing title and description to ensure they are properly aligned.
+        prompt = f"""You are AgriLink's listing text verification expert. Your ONLY job is to check if the title and description refer to the SAME waste type. Do NOT evaluate detail level, completeness, or length.
 
 CRITICAL: 
-- VERIFIED_ALIGNED = Title and description match and provide consistent information
-- NOT_ALIGNED = Title and description don't match or provide conflicting information
+- VERIFIED_ALIGNED = Title and description refer to the same waste type
+- NOT_ALIGNED = Title and description refer to DIFFERENT waste types
 
-VERIFICATION RULES:
+SIMPLE RULES:
 1. VERIFIED_ALIGNED if:
-   - The description provides details that support and expand on what's mentioned in the title
-   - Both title and description refer to the same type of livestock waste
-   - The information is consistent and coherent
-   - The description accurately describes the waste type mentioned in the title
-   - The description correctly identifies the waste type, even if brief or in another language (Tagalog, Bisaya, etc.)
-   - Simple confirmations like "dumi ng baboy" for "Pig Manure" should be considered aligned
+   - Both mention the same animal/waste type (even in different languages)
+   - Description correctly identifies what's in the title
+   - Brief descriptions are OK if correct
+   - Examples that should be ALIGNED:
+     * Title: "Chicken Manure", Description: "dumi ng manok"
+     * Title: "Pig Waste", Description: "pig manure"
+     * Title: "Ostrich waste", Description: "dumi ng ostritch"
 
-2. NOT_ALIGNED if:
-   - Title mentions one waste type but description describes another
-   - Description contradicts or doesn't support the title
-   - Information is inconsistent or confusing
-   - Description is completely unrelated to the specific waste type
-   - Description describes a different animal or waste type entirely
+2. NOT_ALIGNED ONLY if:
+   - Title says one animal, description says another
+   - Example: Title: "Cow Manure", Description: "chicken waste"
 
-ANALYSIS FORMAT:
-Provide detailed analysis covering:
-1. What waste type is mentioned in the title
-2. What the description actually describes (including translation if in another language)
-3. Whether they match or conflict (focus on correctness, not detail level)
-4. Specific reasons for the verdict (only mark NOT_ALIGNED if there's a genuine mismatch)
+DO NOT mark as NOT_ALIGNED for:
+- Brief descriptions
+- Lack of details
+- Simple translations
+- "Generic" but correct descriptions
 
 Return JSON:
 {{
   "verdict": "VERIFIED_ALIGNED" or "NOT_ALIGNED",
   "confidence": 0.0-1.0,
-  "reason": "Provide comprehensive explanation covering: 1. The waste type mentioned in the title, 2. What the description describes, 3. Whether they align or conflict, 4. Specific reasons for the verdict. Be thorough in your analysis.",
+  "reason": "Briefly explain if they match or not. Focus on whether they refer to the same waste type.",
   "isAligned": true/false,
   "processingTime": "{time.time() - start_time:.2f}s"
 }}
 
-IMPORTANT: The reason field must be comprehensive and detailed, explaining ALL factors that led to the verdict."""
+IMPORTANT: Be lenient. If the description correctly identifies the waste type in the title, mark it as ALIGNED regardless of length or detail."""
         
         # Call OpenAI
         print(" Calling OpenAI API for listing text validation...")
