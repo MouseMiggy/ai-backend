@@ -1143,19 +1143,22 @@ VERIFICATION RULES:
    - Both title and description refer to the same type of livestock waste
    - The information is consistent and coherent
    - The description accurately describes the waste type mentioned in the title
+   - The description correctly identifies the waste type, even if brief or in another language (Tagalog, Bisaya, etc.)
+   - Simple confirmations like "dumi ng baboy" for "Pig Manure" should be considered aligned
 
 2. NOT_ALIGNED if:
    - Title mentions one waste type but description describes another
    - Description contradicts or doesn't support the title
    - Information is inconsistent or confusing
-   - Description is too generic or unrelated to the specific waste type
+   - Description is completely unrelated to the specific waste type
+   - Description describes a different animal or waste type entirely
 
 ANALYSIS FORMAT:
 Provide detailed analysis covering:
 1. What waste type is mentioned in the title
-2. What the description actually describes
-3. Whether they match or conflict
-4. Specific reasons for the verdict
+2. What the description actually describes (including translation if in another language)
+3. Whether they match or conflict (focus on correctness, not detail level)
+4. Specific reasons for the verdict (only mark NOT_ALIGNED if there's a genuine mismatch)
 
 Return JSON:
 {{
