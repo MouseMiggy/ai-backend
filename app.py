@@ -1145,6 +1145,7 @@ SIMPLE RULES:
    - Examples that should be ALIGNED:
      * Title: "Chicken Manure", Description: "dumi ng manok"
      * Title: "Pig Waste", Description: "pig manure"
+     * Title: "Swine Manure", Description: "pig waste" (swine and pig are the same)
      * Title: "Ostrich waste", Description: "dumi ng ostritch"
 
 2. NOT_ALIGNED ONLY if:
@@ -1166,7 +1167,12 @@ Return JSON:
   "processingTime": "{time.time() - start_time:.2f}s"
 }}
 
-IMPORTANT: Be lenient. If the description correctly identifies the waste type in the title, mark it as ALIGNED regardless of length or detail."""
+IMPORTANT: Be lenient. If the description correctly identifies the waste type in the title, mark it as ALIGNED regardless of length or detail.
+
+SPECIAL NOTE: Swine and Pig refer to the same animal. Treat them as identical:
+- "Swine Manure" = "Pig Manure" 
+- "Swine Waste" = "Pig Waste"
+- Any combination of swine/pig should be considered aligned"""
         
         # Call OpenAI
         print(" Calling OpenAI API for listing text validation...")
