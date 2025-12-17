@@ -1147,6 +1147,9 @@ SIMPLE RULES:
      * Title: "Pig Waste", Description: "pig manure"
      * Title: "Swine Manure", Description: "pig waste" (swine and pig are the same)
      * Title: "Ostrich waste", Description: "dumi ng ostritch"
+     * Title: "Poultry Waste", Description: "itlog" (eggs are poultry waste)
+     * Title: "Poultry Waste", Description: "egg shells"
+     * Title: "Chicken Manure", Description: "feathers and beddings"
 
 2. NOT_ALIGNED ONLY if:
    - Title says one animal, description says another
@@ -1172,7 +1175,12 @@ IMPORTANT: Be lenient. If the description correctly identifies the waste type in
 SPECIAL NOTE: Swine and Pig refer to the same animal. Treat them as identical:
 - "Swine Manure" = "Pig Manure" 
 - "Swine Waste" = "Pig Waste"
-- Any combination of swine/pig should be considered aligned"""
+- Any combination of swine/pig should be considered aligned
+
+SPECIAL NOTE: Poultry Waste includes various poultry byproducts:
+- Eggs (itlog), egg shells, cracked eggs, rotten eggs are all poultry waste
+- Feathers, beddings, wet wheat are also poultry waste
+- Any mention of eggs or poultry byproducts with "Poultry Waste" or "Chicken Manure" should be considered aligned"""
         
         # Call OpenAI
         print(" Calling OpenAI API for listing text validation...")
