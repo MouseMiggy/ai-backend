@@ -1141,7 +1141,8 @@ SIMPLE RULES:
 1. VERIFIED_ALIGNED if:
    - Both mention the same animal/waste type (even in different languages)
    - Description correctly identifies what's in the title
-   - Brief descriptions are OK if correct
+   - Description is understandable and contains meaningful words, not random characters
+   - Brief descriptions are OK if correct and coherent
    - Examples that should be ALIGNED:
      * Title: "Chicken Manure", Description: "dumi ng manok"
      * Title: "Pig Waste", Description: "pig manure"
@@ -1151,9 +1152,12 @@ SIMPLE RULES:
      * Title: "Poultry Waste", Description: "egg shells"
      * Title: "Chicken Manure", Description: "feathers and beddings"
 
-2. NOT_ALIGNED ONLY if:
+2. NOT_ALIGNED if:
    - Title says one animal, description says another
+   - Description contains random characters, gibberish, or is not understandable
+   - Description is just random words with no coherent meaning
    - Example: Title: "Cow Manure", Description: "chicken waste"
+   - Example: Title: "Poultry Waste", Description: "asdfasdfa egg dsgfgvavcsdf" (contains random characters)
 
 DO NOT mark as NOT_ALIGNED for:
 - Brief descriptions
@@ -1170,7 +1174,7 @@ Return JSON:
   "processingTime": "{time.time() - start_time:.2f}s"
 }}
 
-IMPORTANT: Be lenient. If the description correctly identifies the waste type in the title, mark it as ALIGNED regardless of length or detail.
+IMPORTANT: Be lenient but ensure descriptions are understandable. If the description correctly identifies the waste type in the title AND is coherent (not random gibberish), mark it as ALIGNED. Reject descriptions that are mostly random characters or nonsensical.
 
 SPECIAL NOTE: Swine and Pig refer to the same animal. Treat them as identical:
 - "Swine Manure" = "Pig Manure" 
