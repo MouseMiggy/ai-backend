@@ -12,7 +12,7 @@ from ai_suggestion import ai_suggestions_bp, init_openai
 app = Flask(__name__)
 # Allow all origins for local development (mobile devices need this)
 # Flask-CORS removed - using manual CORS headers instead to avoid conflicts
-# Final deployment for localhost:3000 CORS support
+# Final deployment for localhost:3000 CORS support yes
 
 # Global CORS middleware for all routes
 CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://agrilinkph.vercel.app"]}}, supports_credentials=True)
