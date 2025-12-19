@@ -1000,6 +1000,11 @@ VERIFICATION RULES:
    - Processed fertilizer pellets or granules
    - Organic fertilizer in bags, containers, or piles
    - Vermicompost or worm castings
+   - Egg shells, eggshells (crushed or whole) - poultry waste
+   - Rotten eggs, spoiled eggs, bad eggs - poultry waste
+   - Wet bedding, soiled bedding, used bedding from livestock
+   - Straw bedding, sawdust bedding, wood shavings with animal waste
+   - Poultry litter, chicken litter, coop bedding
    - Any clear agricultural waste/fertilizer products
 
 2. VERIFIED_NOT_LEGITIMATE if image shows:
@@ -1216,7 +1221,34 @@ Please analyze if the title and description are properly aligned."""
             try:
                 ai_result = json.loads(result)
                 ai_result['processingTime'] = f"{time.time() - start_time:.2f}s"
+                
+                # CRITICAL FIX: Ensure verdict and isValid are consistent
+                verdict = ai_result.get('verdict', 'NOT_ALIGNED')
+                is_aligned = verdict == 'VERIFIED_ALIGNED'
+                
+                # Override isValid to match verdict
+                ai_result['isValid'] = is_aligned
+                ai_result['isAligned'] = is_aligned
+                
+                # Check if reason contradicts verdict and fix it
+                reason_text = ai_result.get('reason', '').lower()
+                
+                # If reason says "aligned" but verdict is NOT_ALIGNED, correct the verdict
+                if ('aligned' in reason_text or 'match' in reason_text or 'correct' in reason_text) and not is_aligned:
+                    print(f"⚠️ WARNING: Reason indicates aligned but verdict is NOT_ALIGNED. Correcting verdict to VERIFIED_ALIGNED.")
+                    ai_result['verdict'] = 'VERIFIED_ALIGNED'
+                    ai_result['isValid'] = True
+                    ai_result['isAligned'] = True
+                
+                # If reason says "not aligned" or "different" but verdict is VERIFIED_ALIGNED, correct the verdict
+                elif ('not aligned' in reason_text or 'different' in reason_text or 'mismatch' in reason_text) and is_aligned:
+                    print(f"⚠️ WARNING: Reason indicates not aligned but verdict is VERIFIED_ALIGNED. Correcting verdict to NOT_ALIGNED.")
+                    ai_result['verdict'] = 'NOT_ALIGNED'
+                    ai_result['isValid'] = False
+                    ai_result['isAligned'] = False
+                
                 print(f"✅ Text validation completed in {ai_result['processingTime']}")
+                print(f"📊 Final verdict: {ai_result['verdict']}, isValid: {ai_result['isValid']}, isAligned: {ai_result['isAligned']}")
                 
                 return jsonify({
                     "status": "success",
