@@ -988,6 +988,13 @@ Analyze the images to determine if they show legitimate livestock waste or proce
         
         prompt = f"""You are AgriLink's livestock waste verification expert. Analyze images to verify if they show legitimate livestock waste or processed fertilizer.
 
+CRITICAL DEFINITION: LIVESTOCK WASTE includes ALL byproducts from raising livestock animals, including:
+- Animal manure and feces
+- Animal bedding and litter
+- Egg shells and eggs (from poultry)
+- Feathers, wool, and other animal materials
+- Any organic material produced by or from livestock animals
+
 CRITICAL: 
 - VERIFIED_LEGITIMATE = Image shows genuine livestock waste or processed fertilizer suitable for agricultural use
 - VERIFIED_NOT_LEGITIMATE = Image is verified but does NOT show livestock waste or processed fertilizer
@@ -1000,16 +1007,24 @@ VERIFICATION RULES:
    - Processed fertilizer pellets or granules
    - Organic fertilizer in bags, containers, or piles
    - Vermicompost or worm castings
-   - Egg shells, eggshells (crushed or whole) - poultry waste
-   - Rotten eggs, spoiled eggs, bad eggs - poultry waste
+   - **EGG SHELLS / EGGSHELLS (crushed or whole) - THESE ARE POULTRY WASTE AND MUST BE ACCEPTED**
+   - **ROTTEN EGGS, spoiled eggs, bad eggs, cracked eggs - THESE ARE POULTRY WASTE AND MUST BE ACCEPTED**
    - Wet bedding, soiled bedding, used bedding from livestock
    - Straw bedding, sawdust bedding, wood shavings with animal waste
    - Poultry litter, chicken litter, coop bedding
+   - Feathers, wool, animal fibers
    - Any clear agricultural waste/fertilizer products
+
+**IMPORTANT EXAMPLES:**
+- Image of bucket with eggshells → VERIFIED_LEGITIMATE (eggshells are poultry waste, rich in calcium, used as fertilizer)
+- Image of rotten/cracked eggs → VERIFIED_LEGITIMATE (poultry waste, can be composted for fertilizer)
+- Image of wet straw/bedding → VERIFIED_LEGITIMATE (livestock bedding waste, used as fertilizer)
+- Image of chicken manure → VERIFIED_LEGITIMATE (obvious livestock waste)
+- Image of cow dung → VERIFIED_LEGITIMATE (obvious livestock waste)
 
 2. VERIFIED_NOT_LEGITIMATE if image shows:
    - Regular garbage, plastic, or non-organic waste
-   - Food waste, kitchen scraps, or household trash
+   - Kitchen scraps NOT from livestock (vegetable peels, fruit waste, etc.)
    - Construction materials, chemicals, or industrial waste
    - Unrelated objects, vehicles, buildings, or people
    - Clear non-agricultural content
@@ -1019,6 +1034,9 @@ VERIFICATION RULES:
    - Shows unclear or ambiguous content
    - Is too zoomed in or cropped to identify context
    - Has technical issues preventing analysis
+
+**CRITICAL RULE FOR EGGSHELLS:**
+Eggshells are a byproduct of poultry (chickens, ducks, etc.) and are considered LIVESTOCK WASTE. They are commonly used as organic fertilizer because they are rich in calcium carbonate. If you see eggshells in any form (whole, crushed, in buckets, bags, or piles), you MUST mark them as VERIFIED_LEGITIMATE. Do NOT reject eggshells as "not livestock waste" - they ARE livestock waste from poultry farming.
 
 IMAGE ANALYSIS FORMAT:
 For each image, provide detailed analysis:
@@ -1031,13 +1049,15 @@ Return JSON:
 {{
   "verdict": "VERIFIED_LEGITIMATE" or "VERIFIED_NOT_LEGITIMATE" or "UNABLE_TO_VERIFY",
   "confidence": 0.0-1.0,
-  "reason": "Provide comprehensive explanation covering: 1. Detailed description of what is visible in the image(s), 2. Specific characteristics that indicate livestock waste/fertilizer or lack thereof, 3. Context clues from the setting or packaging, 4. Why the image meets the criteria for the verdict. Be thorough in your analysis.",
+  "reason": "Provide comprehensive explanation covering: 1. Detailed description of what is visible in the image(s), 2. Specific characteristics that indicate livestock waste/fertilizer or lack thereof, 3. Context clues from the setting or packaging, 4. Why the image meets the criteria for the verdict. REMEMBER: Eggshells, rotten eggs, and wet bedding are ALL legitimate livestock waste. Be thorough in your analysis.",
   "isLegitimateWaste": true/false,
-  "wasteType": "manure|compost|fertilizer|organic_waste|not_applicable",
+  "wasteType": "manure|compost|fertilizer|organic_waste|eggshells|poultry_waste|bedding|not_applicable",
   "processingTime": "{time.time() - start_time:.2f}s"
 }}
 
-IMPORTANT: The reason field must be comprehensive and detailed, explaining ALL visual factors that led to the verdict. Be specific about what you see in the images."""
+IMPORTANT: The reason field must be comprehensive and detailed, explaining ALL visual factors that led to the verdict. Be specific about what you see in the images.
+
+**FINAL REMINDER:** If you see eggshells, rotten eggs, or wet bedding in the image, the verdict MUST be VERIFIED_LEGITIMATE because these are all legitimate livestock waste products used as organic fertilizer in agriculture."""
         
         # Call OpenAI
         print(" Calling OpenAI API with vision support for listing image validation...")
